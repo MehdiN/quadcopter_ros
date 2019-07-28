@@ -1,0 +1,30 @@
+FROM osrf/ros:melodic-desktop-full-bionic
+
+RUN apt-get update
+RUN apt-get install -y \
+    apt-utils \
+    build-essential \
+    cmake \
+    apt-transport-https \
+    git \
+    wget \
+    curl \
+    lsb-core \
+    bash-completion \
+    lsb-release \ 
+    ros-melodic-desktop-full \
+    python-rosinstall \
+    python-rosinstall-generator \
+    python-wstool
+
+
+#
+COPY ../quadcopter ./root/quadcopter
+
+WORKDIR /root/quadcopter
+
+# RUN rosdep init && \
+#     rosdep update
+
+# RUN  /bin/bash -c "echo "source /opt/ros/melodic/setup.bash" >> ~/.bashrc"
+# RUN  /bin/bash -c "source ~/.bashrc"
