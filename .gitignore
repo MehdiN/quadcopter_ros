@@ -34,3 +34,6 @@
 .catkin_workspace
 devel/
 build/
+quadcopter/devel/
+quadcopter/build/
+quadcopter/.catkin_workspace

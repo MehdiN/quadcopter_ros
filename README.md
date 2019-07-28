@@ -1,15 +1,10 @@
 # drone-simulator-ros
 
+Using ROS Melodic on Ubuntu 18.04
 
-## USE Docker
+This is a simulator intended for quacopters in order to test control schemes and trajectories genration.
 
-Docker Container to run the simulator
+## Visualisation:
 
-ros_kinetic_full_desktop build on ubuntu16.04 
-
-To build and launch the docker:
-
-    docker-compose up -d
-    docker exec -it [container_name] [cmd]
-
-GUI not working with nvidia-docker2
+First the visulation will be using Python
+In a second time, it will be integrated to Gazebo Simulator 
