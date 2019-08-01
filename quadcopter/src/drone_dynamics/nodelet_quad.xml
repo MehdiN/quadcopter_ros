@@ -1,0 +1,7 @@
+<library path="lib/libquadcopter">
+  <class name="quadcopter/Quadcopter" type="quadcopter::Quadcopter" base_class_type="nodelet::Nodelet">
+    <description> 
+      Nodelet simulating quadrotor dynamics
+    </description>
+  </class>
+</library>
