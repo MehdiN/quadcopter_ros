@@ -1,10 +1,15 @@
 # drone-simulator-ros
 
+This is a simulator intended for quacopters for trajectory generation and control design.
+
 Using ROS Melodic on Ubuntu 18.04
 
-This is a simulator intended for quacopters in order to test control schemes and trajectories generation.
+## ROAD MAP
 
-## Visualisation:
-
-First the visulation will be using Python
-In a second time, it will be integrated to Gazebo Simulator 
+* Simulation of quadrotor dynamics
+* Implementation of a basic controller
+* Python Visualization
+* Sensors Simulation
+* Controllers and Estimators Implementation
+* Gazebo Simulator Integration
+* Hardware Integration
