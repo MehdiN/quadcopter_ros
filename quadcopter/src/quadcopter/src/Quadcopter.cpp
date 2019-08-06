@@ -1,6 +1,5 @@
 #include <pluginlib/class_list_macros.h>
-#include "Quadopter.h"
-
+#include "quadcopter/Quadcopter.h"
 
 namespace quadcopter
 {
@@ -23,11 +22,11 @@ namespace quadcopter
 
 
         // Init publisher and subcriber
-        _thrust_sub = nh_in.subscribe("thrust",10,&thrustCallback,this);
-        _pose_sub = private_nh.subscribe("pose",10,&poseCallback,this);
-        _vel_pub = nh_out.advertise<quadcopter::RatePtr>("accel",1,true);
-        _accel_pub = private_nh.advertise<quadcopter::RatePtr>("accel",1,true);
-        _update_sub = private_nh.subscribe("accel",10,&updateCallback,this);
+        _thrust_sub = nh_in.subscribe("thrust",10,&quadcopter::Quadcopter::thrustCallback,this);
+        _pose_sub = private_nh.subscribe("pose",10,&quadcopter::Quadcopter::poseCallback,this);
+        _vel_pub = nh_out.advertise<geometry_msgs::AccelStampedPtr>("accel",1,true);
+        _accel_pub = private_nh.advertise<geometry_msgs::AccelStampedPtr>("accel",1,true);
+        _update_sub = private_nh.subscribe("accel",10,&quadcopter::Quadcopter::updateCallback,this);
         _pose_pub = nh_out.advertise<geometry_msgs::PoseStampedPtr>("pose",1,true);
 
     }
@@ -47,14 +46,14 @@ namespace quadcopter
 
         // publish the data
 
-        quadcopter::RatePtr derivative_vel;
+        geometry_msgs::AccelStampedPtr derivative_vel;
         
-        derivative_vel->u = derivative.velocity(0);
-        derivative_vel->v = derivative.velocity(1);
-        derivative_vel->w = derivative.velocity(2);
-        derivative_vel->p = derivative.angular_vel(0);
-        derivative_vel->q = derivative.angular_vel(1);
-        derivative_vel->r = derivative.angular_vel(2);
+        derivative_vel->accel.linear.x = derivative.velocity(0);
+        derivative_vel->accel.linear.y = derivative.velocity(1);
+        derivative_vel->accel.linear.z = derivative.velocity(2);
+        derivative_vel->accel.angular.x = derivative.angular_vel(0);
+        derivative_vel->accel.angular.y = derivative.angular_vel(1);
+        derivative_vel->accel.angular.z = derivative.angular_vel(2);
 
         _accel_pub.publish(derivative_vel);
 
@@ -62,32 +61,31 @@ namespace quadcopter
     }
 
 
-    void Quadcopter::updateCallback(const quadcopter::RateConstPtr &derivative_input)
+    void Quadcopter::updateCallback(const geometry_msgs::AccelStampedConstPtr &derivative_input)
     {
-        state.velocity(0) += dt * derivative_input->u;
-        state.velocity(1) += dt * derivative_input->v;
-        state.velocity(2) += dt * derivative_input->w;
+        state.velocity(0) += dt * derivative_input->accel.linear.x;
+        state.velocity(1) += dt * derivative_input->accel.linear.y;
+        state.velocity(2) += dt * derivative_input->accel.linear.z;
 
-        state.angular_vel(0) += dt * derivative_input->p;
-        state.angular_vel(1) += dt * derivative_input->q;
-        state.angular_vel(2) += dt * derivative_input->r;
+        state.angular_vel(0) += dt * derivative_input->accel.angular.x;
+        state.angular_vel(1) += dt * derivative_input->accel.angular.y;
+        state.angular_vel(2) += dt * derivative_input->accel.angular.z;
 
         // TODO: publish updated velocity
-        quadcopter::Rate velocity;
+        geometry_msgs::AccelStampedPtr velocity;
         
-        velocity.u = state.velocity(0);
-        velocity.v = state.velocity(1);
-        velocity.w = state.velocity(2);
-        velocity.p = state.angular_vel(0);
-        velocity.q = state.angular_vel(1);
-        velocity.r = state.angular_vel(2);
+        velocity->accel.linear.x = state.velocity(0);
+        velocity->accel.linear.y = state.velocity(1);
+        velocity->accel.linear.z = state.velocity(2);
+        velocity->accel.angular.x = state.angular_vel(0);
+        velocity->accel.angular.y = state.angular_vel(1);
+        velocity->accel.angular.z = state.angular_vel(2);
 
         _vel_pub.publish(velocity);
 
-        // TODO: define transform matrix T
-        Eigen::Matrix3Xd matrix_T;
+        
         derivative.pose = rotation_matrix * state.velocity;
-        derivative.quaternion = matrix_T * state.angular_vel;
+        derivative.quaternion = quat_matrix * state.angular_vel;
 
         //update
 
@@ -181,7 +179,7 @@ namespace quadcopter
         // Angular dynamic
         
         Eigen::Matrix3d A;
-        Eigen::Matrix3Xd B(4);
+        Eigen::Matrix<double,3,4> B;
 
         
         A << 0, state.angular_vel(2)*(Iyy-Izz)/Ixx ,0,
