@@ -1,10 +1,9 @@
-
 cmake_minimum_required(VERSION 2.8.3)
 project(quadcopter)
 
 add_compile_options(-std=c++11)
 
-find_package(catkin REQUIRED COMPONENTS nodelet roscpp std_msgs geometry_msgs message_generation)
+find_package(catkin REQUIRED COMPONENTS nodelet roscpp std_msgs geometry_msgs message_generation pluginlib)
 
 
 add_message_files(
@@ -24,7 +23,7 @@ include_directories(${catkin_INCLUDE_DIRS})
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES nodelet_quad
-  CATKIN_DEPENDS nodelet roscpp std_msgs message_generation geometry_msgs
+  CATKIN_DEPENDS nodelet roscpp std_msgs message_generation geometry_msgs pluginlib
 )
 
 include_directories(
@@ -32,7 +31,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-## Create the nodelet tutorial library
+## Create the nodelet library
 add_library(nodelet_quad src/Quadcopter.cpp)
 target_link_libraries(nodelet_quad ${catkin_LIBRARIES})
 if(catkin_EXPORTED_LIBRARIES)
@@ -46,5 +45,5 @@ install(TARGETS nodelet_quad
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
-install(FILES nodelet_quad.xml quacopter_params.yaml
+install(FILES nodelet_quad.xml config/quadcopter_params.yaml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
