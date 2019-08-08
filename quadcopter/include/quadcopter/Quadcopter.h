@@ -2,11 +2,16 @@
 #define __QUADCOPTER_H__
 
 #include "ros/ros.h"
-#include "geometry_msgs/PoseStamped.h"
+#include "geometry_msgs/Pose.h"
 #include "nodelet/nodelet.h"
 #include "quadcopter/Thrust.h"
-#include "geometry_msgs/AccelStamped.h"
+#include "geometry_msgs/Accel.h"
 #include <eigen3/Eigen/Core>
+
+/*  
+Class Quacopter for running Equation Of Motion of a  plus-shaped UUV 
+It was intended to be loadable as a plugin for others projects by using the nodelet supclass
+*/
 
 
 
@@ -17,28 +22,12 @@ namespace quadcopter
         
         public:
         
-        Quadcopter():
-        Ixx(0.1),
-        Iyy(0.1),
-        Izz(0.1),
-        mass(0.1),
-        gamma(0.1),
-        arm_len(0.1)
-        {
-            state.pose.setZero();
-            state.quaternion = Eigen::Vector4d(1.0,0,0,0);
-            state.velocity.setZero();
-            state.angular_vel.setZero();
-            derivative.angular_vel.setZero();
-            derivative.pose.setZero();
-            derivative.velocity.setZero();
-            derivative.quaternion.setZero();
-            rotation_matrix.setIdentity();
-            quat_matrix.setRandom();
-        }
+        Quadcopter();
+
+         ~Quadcopter();
         
         typedef Eigen::Matrix<double,4,3> Tmatrix;
-        static constexpr double g0 = 9.80665;
+        static constexpr double g0{9.81}; //(9.80665;
         struct StateVector
         {
             Eigen::Vector3d pose; // x,y,z
@@ -58,6 +47,9 @@ namespace quadcopter
         ros::NodeHandle nh_in; // Node Handler to subcribe to external nodes
         ros::NodeHandle nh_out; // Node Handler to publish to external nodes
         
+        // we publish the 3 following topics: pose vel and accel
+        // we subcribe to the 3 following topic: thrust pos and accel
+
         // Publisher
         ros::Publisher _vel_pub;
         ros::Publisher _accel_pub;
@@ -69,9 +61,9 @@ namespace quadcopter
         ros::Subscriber _update_sub;
 
         // callback methods
-        void poseCallback(const geometry_msgs::PoseStampedConstPtr &input); // placeholder callback function
-        void thrustCallback(const quadcopter::ThrustConstPtr& input);
-        void updateCallback(const geometry_msgs::AccelStampedConstPtr& derivative_input);
+        void poseCallback(const geometry_msgs::Pose::ConstPtr& input);
+        void thrustCallback(const quadcopter::Thrust::ConstPtr& input);
+        void updateCallback(const geometry_msgs::Accel::ConstPtr& derivative_input);
 
 
         // Dynamics and Kinematics methods
@@ -100,9 +92,6 @@ namespace quadcopter
 
         // Integration step
         double dt;
-
-
-
 
     };
 

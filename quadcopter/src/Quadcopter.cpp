@@ -3,10 +3,42 @@
 
 namespace quadcopter
 {
+
+    // Constructor
+    Quadcopter::Quadcopter():
+    Ixx(0.1),
+    Iyy(0.1),
+    Izz(0.1),
+    mass(0.1),
+    gamma(0.1),
+    arm_len(0.1)
+    {
+        dt = 0;
+        thrust.setZero();
+        state.pose.setZero();
+        state.quaternion = Eigen::Vector4d(1.0,0,0,0);
+        state.velocity.setZero();
+        state.angular_vel.setZero();
+        derivative.angular_vel.setZero();
+        derivative.pose.setZero();
+        derivative.velocity.setZero();
+        derivative.quaternion.setZero();
+        rotation_matrix.setIdentity();
+        quat_matrix.setRandom();
+    }
+    // destructor
+    Quadcopter::~Quadcopter()
+    {
+    }
+
+    // declare the  static constexpr outside class to avoid linkage error
+    constexpr double Quadcopter::g0;
+
     void Quadcopter::onInit()
     {
         NODELET_DEBUG("initializing nodelet");
-        // get the Node Handler
+        
+        // get the Node Handlers
         private_nh = getPrivateNodeHandle();
         nh_in = ros::NodeHandle(getNodeHandle(),"quadcopter_in");
         nh_out = ros::NodeHandle(getNodeHandle(),"quadcopter_out");
@@ -24,17 +56,37 @@ namespace quadcopter
         // Init publisher and subcriber
         _thrust_sub = nh_in.subscribe("thrust",10,&quadcopter::Quadcopter::thrustCallback,this);
         _pose_sub = private_nh.subscribe("pose",10,&quadcopter::Quadcopter::poseCallback,this);
-        _vel_pub = nh_out.advertise<geometry_msgs::AccelStampedPtr>("accel",1,true);
-        _accel_pub = private_nh.advertise<geometry_msgs::AccelStampedPtr>("accel",1,true);
+        _vel_pub = nh_out.advertise<geometry_msgs::Accel>("vel",1,true);
+        _accel_pub = private_nh.advertise<geometry_msgs::Accel>("accel",1,true);
         _update_sub = private_nh.subscribe("accel",10,&quadcopter::Quadcopter::updateCallback,this);
-        _pose_pub = nh_out.advertise<geometry_msgs::PoseStampedPtr>("pose",1,true);
+        _pose_pub = nh_out.advertise<geometry_msgs::Pose>("pose",1,true);
 
     }
 
     // callback methods
 
-    void Quadcopter::thrustCallback(const quadcopter::ThrustConstPtr &input)
+    void Quadcopter::poseCallback(const geometry_msgs::Pose::ConstPtr &data)
     {
+        
+        NODELET_DEBUG("pose callback");
+        
+        state.pose(0) = data->position.x;
+        state.pose(1) = data->position.y;
+        state.pose(2) = data->position.z;
+
+
+        state.quaternion(0) = data->orientation.w;
+        state.quaternion(1) = data->orientation.x;
+        state.quaternion(2) = data->orientation.y;
+        state.quaternion(3) = data->orientation.z;
+    }
+
+
+    void Quadcopter::thrustCallback(const quadcopter::Thrust::ConstPtr &input)
+    {
+
+        NODELET_DEBUG("Get motor thrust callback");
+
         // update thrust from topic
         thrust(0) = input->t0;
         thrust(1) = input->t1;
@@ -46,14 +98,14 @@ namespace quadcopter
 
         // publish the data
 
-        geometry_msgs::AccelStampedPtr derivative_vel;
+        geometry_msgs::AccelPtr derivative_vel;
         
-        derivative_vel->accel.linear.x = derivative.velocity(0);
-        derivative_vel->accel.linear.y = derivative.velocity(1);
-        derivative_vel->accel.linear.z = derivative.velocity(2);
-        derivative_vel->accel.angular.x = derivative.angular_vel(0);
-        derivative_vel->accel.angular.y = derivative.angular_vel(1);
-        derivative_vel->accel.angular.z = derivative.angular_vel(2);
+        derivative_vel->linear.x = derivative.velocity(0);
+        derivative_vel->linear.y = derivative.velocity(1);
+        derivative_vel->linear.z = derivative.velocity(2);
+        derivative_vel->angular.x = derivative.angular_vel(0);
+        derivative_vel->angular.y = derivative.angular_vel(1);
+        derivative_vel->angular.z = derivative.angular_vel(2);
 
         _accel_pub.publish(derivative_vel);
 
@@ -61,25 +113,28 @@ namespace quadcopter
     }
 
 
-    void Quadcopter::updateCallback(const geometry_msgs::AccelStampedConstPtr &derivative_input)
+    void Quadcopter::updateCallback(const geometry_msgs::Accel::ConstPtr &derivative_input)
     {
-        state.velocity(0) += dt * derivative_input->accel.linear.x;
-        state.velocity(1) += dt * derivative_input->accel.linear.y;
-        state.velocity(2) += dt * derivative_input->accel.linear.z;
 
-        state.angular_vel(0) += dt * derivative_input->accel.angular.x;
-        state.angular_vel(1) += dt * derivative_input->accel.angular.y;
-        state.angular_vel(2) += dt * derivative_input->accel.angular.z;
+        NODELET_DEBUG("update callback");
+
+        state.velocity(0) += dt * derivative_input->linear.x;
+        state.velocity(1) += dt * derivative_input->linear.y;
+        state.velocity(2) += dt * derivative_input->linear.z;
+
+        state.angular_vel(0) += dt * derivative_input->angular.x;
+        state.angular_vel(1) += dt * derivative_input->angular.y;
+        state.angular_vel(2) += dt * derivative_input->angular.z;
 
         // TODO: publish updated velocity
-        geometry_msgs::AccelStampedPtr velocity;
+        geometry_msgs::AccelPtr velocity;
         
-        velocity->accel.linear.x = state.velocity(0);
-        velocity->accel.linear.y = state.velocity(1);
-        velocity->accel.linear.z = state.velocity(2);
-        velocity->accel.angular.x = state.angular_vel(0);
-        velocity->accel.angular.y = state.angular_vel(1);
-        velocity->accel.angular.z = state.angular_vel(2);
+        velocity->linear.x = state.velocity(0);
+        velocity->linear.y = state.velocity(1);
+        velocity->linear.z = state.velocity(2);
+        velocity->angular.x = state.angular_vel(0);
+        velocity->angular.y = state.angular_vel(1);
+        velocity->angular.z = state.angular_vel(2);
 
         _vel_pub.publish(velocity);
 
@@ -102,22 +157,19 @@ namespace quadcopter
 
         // publish updated POS
 
-        geometry_msgs::PoseStampedPtr updated_pose(new geometry_msgs::PoseStamped);
+        geometry_msgs::PosePtr updated_pose;
 
-        updated_pose->pose.position.x = state.pose(0);
-        updated_pose->pose.position.y = state.pose(1);
-        updated_pose->pose.position.z = state.pose(2);
+        updated_pose->position.x = state.pose(0);
+        updated_pose->position.y = state.pose(1);
+        updated_pose->position.z = state.pose(2);
 
-        updated_pose->pose.orientation.w = state.quaternion(0);
-        updated_pose->pose.orientation.x = state.quaternion(1);
-        updated_pose->pose.orientation.y = state.quaternion(2);
-        updated_pose->pose.orientation.z = state.quaternion(3);
+        updated_pose->orientation.w = state.quaternion(0);
+        updated_pose->orientation.x = state.quaternion(1);
+        updated_pose->orientation.y = state.quaternion(2);
+        updated_pose->orientation.z = state.quaternion(3);
 
         _pose_pub.publish(updated_pose);
-        
-
-
-
+    
     }
 
     void Quadcopter::update_transformation_matrix()
@@ -195,17 +247,17 @@ namespace quadcopter
         // Compute angular acceleration
         derivative.angular_vel = A * state.angular_vel + B * thrust;
 
-        Eigen::Vector3d g(0,0,g0);
+        Eigen::Vector3d g(0,0,9.81);
         Eigen::Vector3d u(0,0,thrust.sum()/mass);
 
         // Linear dynamic
         
         // compute linear acceleration
-        derivative.velocity = rotation_matrix.inverse() * g + u - state.angular_vel.cross(state.velocity);
+        derivative.velocity = 0*g + u;// rotation_matrix.inverse() * g + u;// - state.angular_vel.cross(state.velocity);
 
     }
-
 
 PLUGINLIB_EXPORT_CLASS(quadcopter::Quadcopter, nodelet::Nodelet)
 }
 
+// PLUGINLIB_EXPORT_CLASS(quadcopter::Quadcopter, nodelet::Nodelet);
