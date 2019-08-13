@@ -13,7 +13,7 @@ namespace quadcopter
     gamma(0.1),
     arm_len(0.1)
     {
-        dt = 0;
+        dt = 0.01;
         thrust.setZero();
         state.pose.setZero();
         state.quaternion = Eigen::Vector4d(1.0,0,0,0);
@@ -40,8 +40,9 @@ namespace quadcopter
         
         // get the Node Handlers
         private_nh = getPrivateNodeHandle();
-        nh_in = ros::NodeHandle(getNodeHandle(),"quadcopter_in");
-        nh_out = ros::NodeHandle(getNodeHandle(),"quadcopter_out");
+        // nh_in = ros::NodeHandle(getNodeHandle(),"quadcopter_in");
+        // nh_out = ros::NodeHandle(getNodeHandle(),"quadcopter_out");
+        public_nh = ros::NodeHandle(getNodeHandle(),"out");
 
 
         // Load parameters
@@ -53,13 +54,19 @@ namespace quadcopter
         private_nh.getParam("Izz",Izz);
 
 
+        const std::string nh_name = public_nh.getNamespace();
+
+
         // Init publisher and subcriber
-        _thrust_sub = nh_in.subscribe("thrust",10,&quadcopter::Quadcopter::thrustCallback,this);
-        _pose_sub = private_nh.subscribe("pose",10,&quadcopter::Quadcopter::poseCallback,this);
-        _vel_pub = nh_out.advertise<geometry_msgs::Accel>("vel",1,true);
-        _accel_pub = private_nh.advertise<geometry_msgs::Accel>("accel",1,true);
-        _update_sub = private_nh.subscribe("accel",10,&quadcopter::Quadcopter::updateCallback,this);
-        _pose_pub = nh_out.advertise<geometry_msgs::Pose>("pose",1,true);
+    
+        _vel_pub = public_nh.advertise<geometry_msgs::Accel>("vel",1,true);
+        _accel_pub = public_nh.advertise<geometry_msgs::Accel>("accel",1,true);
+        _pose_pub = public_nh.advertise<geometry_msgs::Pose>("pose",1,true);
+
+        _thrust_sub = public_nh.subscribe("thrust",10,&quadcopter::Quadcopter::thrustCallback,this);
+        _pose_sub = private_nh.subscribe(nh_name + "/pose",10,&quadcopter::Quadcopter::poseCallback,this);
+        _update_sub = private_nh.subscribe( nh_name + "/accel",10,&quadcopter::Quadcopter::updateCallback,this);
+        
 
     }
 
@@ -68,7 +75,7 @@ namespace quadcopter
     void Quadcopter::poseCallback(const geometry_msgs::Pose::ConstPtr &data)
     {
         
-        NODELET_DEBUG("pose callback");
+        NODELET_INFO("pose callback");
         
         state.pose(0) = data->position.x;
         state.pose(1) = data->position.y;
@@ -85,7 +92,7 @@ namespace quadcopter
     void Quadcopter::thrustCallback(const quadcopter::Thrust::ConstPtr &input)
     {
 
-        NODELET_DEBUG("Get motor thrust callback");
+        NODELET_INFO("Get motor thrust callback");
 
         // update thrust from topic
         thrust(0) = input->t0;
@@ -98,7 +105,7 @@ namespace quadcopter
 
         // publish the data
 
-        geometry_msgs::AccelPtr derivative_vel;
+        geometry_msgs::AccelPtr derivative_vel(new geometry_msgs::Accel);
         
         derivative_vel->linear.x = derivative.velocity(0);
         derivative_vel->linear.y = derivative.velocity(1);
@@ -116,7 +123,7 @@ namespace quadcopter
     void Quadcopter::updateCallback(const geometry_msgs::Accel::ConstPtr &derivative_input)
     {
 
-        NODELET_DEBUG("update callback");
+        NODELET_INFO("Integrate Vel");
 
         state.velocity(0) += dt * derivative_input->linear.x;
         state.velocity(1) += dt * derivative_input->linear.y;
@@ -127,7 +134,7 @@ namespace quadcopter
         state.angular_vel(2) += dt * derivative_input->angular.z;
 
         // TODO: publish updated velocity
-        geometry_msgs::AccelPtr velocity;
+        geometry_msgs::AccelPtr velocity(new geometry_msgs::Accel);
         
         velocity->linear.x = state.velocity(0);
         velocity->linear.y = state.velocity(1);
@@ -147,7 +154,18 @@ namespace quadcopter
         state.pose += dt*derivative.pose;
         state.quaternion += dt*derivative.quaternion;
 
-        // normalize quaternion
+        //Limit altitude Note: NED convention
+
+        if(state.pose(2) < - MAX_ALT)
+        {
+            state.pose(2) = - MAX_ALT;
+        } 
+        else if(state.pose(2)>0)
+        {
+            state.pose(2) = 0;
+        }
+
+        // normalize Quaternion
 
         state.quaternion.normalize();
 
@@ -157,7 +175,7 @@ namespace quadcopter
 
         // publish updated POS
 
-        geometry_msgs::PosePtr updated_pose;
+        geometry_msgs::PosePtr updated_pose(new geometry_msgs::Pose);
 
         updated_pose->position.x = state.pose(0);
         updated_pose->position.y = state.pose(1);
@@ -228,6 +246,9 @@ namespace quadcopter
 
     void Quadcopter::compute_eom()
     {
+
+        NODELET_INFO("Update EOM");
+
         // Angular dynamic
         
         Eigen::Matrix3d A;
@@ -253,7 +274,7 @@ namespace quadcopter
         // Linear dynamic
         
         // compute linear acceleration
-        derivative.velocity = 0*g + u;// rotation_matrix.inverse() * g + u;// - state.angular_vel.cross(state.velocity);
+        derivative.velocity = rotation_matrix.inverse()*g + u - state.angular_vel.cross(state.velocity);
 
     }
 
