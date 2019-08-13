@@ -7,6 +7,7 @@
 #include "quadcopter/Thrust.h"
 #include "geometry_msgs/Accel.h"
 #include <eigen3/Eigen/Core>
+#include <eigen3/Eigen/Dense>
 
 /*  
 Class Quacopter for running Equation Of Motion of a  plus-shaped UUV 
