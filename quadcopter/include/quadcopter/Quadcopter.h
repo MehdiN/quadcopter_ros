@@ -9,6 +9,11 @@
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Dense>
 
+
+#define MAX_SPEED 100
+#define MAX_ALT   100
+#define MIN_ALT   0
+
 /*  
 Class Quacopter for running Equation Of Motion of a  plus-shaped UUV 
 It was intended to be loadable as a plugin for others projects by using the nodelet supclass
@@ -45,9 +50,10 @@ namespace quadcopter
 
         // Node Stuff
         ros::NodeHandle private_nh; // private node handler from nodelet manager
-        ros::NodeHandle nh_in; // Node Handler to subcribe to external nodes
-        ros::NodeHandle nh_out; // Node Handler to publish to external nodes
-        
+        // ros::NodeHandle nh_in; // Node Handler to subcribe to external nodes
+        // ros::NodeHandle nh_out; // Node Handler to publish to external nodes
+        ros::NodeHandle public_nh;
+
         // we publish the 3 following topics: pose vel and accel
         // we subcribe to the 3 following topic: thrust pos and accel
 
