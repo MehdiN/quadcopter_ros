@@ -1,5 +1,5 @@
 Arm_len: 0.046 # in m
-Mass: 0.003 # in kg
+Mass: 0.03 # in kg
 Ixx: 1.43 # *1E-5
 Iyy: 1.43 # *1E-5
 Izz: 2.98 # *1E-5
