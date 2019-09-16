@@ -33,6 +33,7 @@
 
 # Workspace files
 .catkin_workspace
+docker/
 devel/
 build/
 quadcopter/devel/
