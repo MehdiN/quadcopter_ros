@@ -32,12 +32,15 @@
 *.app
 
 # Workspace files
+.vscode/
 .catkin_workspace
-docker/
+dockerfile
+docker-compose.yml
 devel/
 build/
 quadcopter/devel/
 quadcopter/build/
 quadcopter/.catkin_workspace
 quadcopter/.vscode/
+notes.txt
 
