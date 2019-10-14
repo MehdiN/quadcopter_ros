@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+#include "ros/ros.h"
 
 class PID
 {
@@ -11,34 +12,48 @@ public:
     PID();
     ~PID();
 
-    float init_or_reset_PID();
+    struct Gain
+    {
+        double kp;
+        double ki;
+        double kd;
+        double tf;
+        double kt; // anti-windup gain 
+    };
+    
 
-    float get_pid();
-    float get_proportional();
-    float get_derivative();
-    float get_integrator();
+    void set_target(double target);
+    void set_freq_filter(double freq);
+    void load_pid_params();
+
+    void init_or_reset_PID();
+    double get_pid();
+    double get_proportional();
+    double get_derivative();
+    double get_integrator();
     void update_integrator_anti_wu();
 
 
 private:
 
-    float _kp;
-    float _ki;
-    float _kd;
+    Gain _gains;
 
-    float _kt; // anti-windup gain 
+    double _dt;
 
-    float _dt;
+    double _derivative;
+    double _integrator;
+    double _target;
+    double _measure;
+    double _old_measure;
+    double _error;
+    double _output;
+    double _sat_output;
+    double low_val;
+    double high_val;
 
-    float _derivative;
-    float _integrator;
-    float _target;
-    float _error;
-    float _output;
-    float _sat_output;
+    // flags
 
-    float low_val;
-    float high_val;
+    bool _init;
 
 
 };

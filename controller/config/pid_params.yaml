@@ -1,0 +1,6 @@
+altitude_ctl_values:
+  kp: 1
+  ki: 0
+  kd: 0
+  tf: 1
+  lp_freq: 0
