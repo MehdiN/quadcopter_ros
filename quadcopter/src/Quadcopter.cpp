@@ -36,13 +36,13 @@ namespace quadcopter
 
     void Quadcopter::onInit()
     {
-        NODELET_DEBUG("initializing nodelet");
+        NODELET_INFO("initializing nodelet");
         
         // get the Node Handlers
         private_nh = getPrivateNodeHandle();
         // nh_in = ros::NodeHandle(getNodeHandle(),"quadcopter_in");
         // nh_out = ros::NodeHandle(getNodeHandle(),"quadcopter_out");
-        public_nh = ros::NodeHandle(getNodeHandle(),"out");
+        public_nh = ros::NodeHandle(getNodeHandle(),"quadcopter");
 
 
         // Load parameters
@@ -67,6 +67,8 @@ namespace quadcopter
         _pose_sub = private_nh.subscribe(nh_name + "/pose",10,&quadcopter::Quadcopter::poseCallback,this);
         _update_sub = private_nh.subscribe( nh_name + "/accel",10,&quadcopter::Quadcopter::updateCallback,this);
         
+
+        std::cout << nh_name << std::endl;
 
     }
 
@@ -122,6 +124,8 @@ namespace quadcopter
 
     void Quadcopter::updateCallback(const geometry_msgs::Accel::ConstPtr &derivative_input)
     {
+
+        std::cout << "UPDATE" << std::endl;
 
         NODELET_INFO("Integrate Vel");
 
@@ -225,6 +229,8 @@ namespace quadcopter
 
         rotation_matrix *= 2;
 
+        // update the angular transformation matrix
+
         quat_matrix(0,0) = -q1;
         quat_matrix(0,1) = -q2;
         quat_matrix(0,2) = -q3;
@@ -251,6 +257,7 @@ namespace quadcopter
 
         // Angular dynamic
         
+        // Dynamics matrix
         Eigen::Matrix3d A;
         Eigen::Matrix<double,3,4> B;
 
@@ -259,6 +266,7 @@ namespace quadcopter
                 0,  0, state.angular_vel(0)*(Izz-Ixx)/Iyy,
                 state.angular_vel(1)*(Ixx-Iyy)/Izz, 0, 0;
 
+        // Inverted Kinematics
         B << 0, -arm_len, 0, arm_len,
             arm_len, 0, -arm_len, 0,
             gamma,-gamma,gamma,-gamma;
@@ -267,7 +275,7 @@ namespace quadcopter
 
         // Compute angular acceleration
         derivative.angular_vel = A * state.angular_vel + B * thrust;
-
+                
         Eigen::Vector3d g(0,0,9.81);
         Eigen::Vector3d u(0,0,thrust.sum()/mass);
 
