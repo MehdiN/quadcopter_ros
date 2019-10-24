@@ -7,8 +7,7 @@ Main control loop for drone control
 #include "ros/ros.h"
 #include "std_msgs/Float32.h"
 #include "geometry_msgs/Pose.h"
-#include "AltitudeController.h"
-
+#include "altitudeControl/AltitudeController.h"
 
 int main(int argc, char **argv)
 {
@@ -20,15 +19,14 @@ int main(int argc, char **argv)
 
     // Altitude controller;
     altitude_controller.init();
-    altitude_controller.load_parameters();
 
     // initialize the subcriber and the publisher
     ros::Publisher control_pub = node.advertise<std_msgs::Float32>("cmd_z",1);
-    ros::Subscriber control_pub = node.subscribe("/quadcopter/pose",1,AltitudeController::callback,&altitude_controller);
+    ros::Subscriber control_sub = node.subscribe("/quadcopter/pose",1,&AltitudeController::callback,&altitude_controller);
 
     ros::Rate rate(1);
 
-    double z_target = -10; // In NED configuration
+    double z_target = -1.5; // In NED configuration
     std_msgs::Float32 command;
 
 
