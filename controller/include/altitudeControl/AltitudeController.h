@@ -1,5 +1,8 @@
+#ifndef _ALTITUDE_CONTROLLER_
+#define _ALTITUDE_CONTROLLER_
+
 #include "controller/PID.h"
-#include "ros.h"
+#include "ros/ros.h"
 #include "std_msgs/Float32.h"
 #include "geometry_msgs/Pose.h"
 
@@ -11,45 +14,38 @@ class AltitudeController
     public:
 
     AltitudeController():
-    command(0.0),
-    target(0.0),
-    altitude(0.0)
-    {};
+    _altitude(0),
+    _target(0),
+    _command(0)
+    {
 
-
-    ~AltitudeController();
+    }
 
     // Initialisation of the controller
     void init();
-    void load_parameters();
-
-    //publish
-    void publish();
-    void subcribe();
 
     // Run the control algorithm
     void run();
     // set target;
-    void set_target(float target){this->target=target;};
+    void set_target(float target){_target=target;};
     // get command
-    double get_cmd(){return command;};
-
+    double get_cmd(){return _command;};
 
     // callback for subcriber;
     void callback(const geometry_msgs::Pose::ConstPtr& pose);
     
-    
-
     private:
 
     // PID
     PID pid;
     
     // controller state
-    double altitude;
-    double target;
-    double command;
+    double _altitude;
+    double _target;
+    double _command;
 
 
 
 };
+
+#endif

@@ -1,8 +1,5 @@
 #include "AltitudeController.h"
 
-
-
-
 void AltitudeController::init()
 {
     // init the controller
@@ -12,16 +9,13 @@ void AltitudeController::init()
 
 }
 
-
-
 void AltitudeController::run()
 {
-    pid.set_target(target);
-    command = pid.get_pid();
+    pid.set_target(_target);
+    _command = pid.get_pid();
 }
-
 
 void AltitudeController::callback(const geometry_msgs::Pose::ConstPtr& pose)
 {
-    altitude = pose->position.z;
+    _altitude = pose->position.z;
 }
