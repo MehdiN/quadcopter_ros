@@ -1,8 +1,12 @@
+#ifndef _PID_H_
+#define _PID_H_
+
 // Simple PID controller with anti-windup
 #include <iostream>
 #include <cmath>
 #include <algorithm>
 #include "ros/ros.h"
+
 
 class PID
 {
@@ -10,7 +14,7 @@ class PID
 public:
 
     PID();
-    ~PID();
+    ~PID(){};
 
     struct Gain
     {
@@ -58,3 +62,4 @@ private:
 
 };
 
+#endif
