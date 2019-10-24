@@ -30,7 +30,7 @@ namespace quadcopter
         
         Quadcopter();
 
-         ~Quadcopter();
+        ~Quadcopter();
         
         typedef Eigen::Matrix<double,4,3> Tmatrix;
         static constexpr double g0{9.81}; //(9.80665;
@@ -67,14 +67,17 @@ namespace quadcopter
         ros::Subscriber _pose_sub;
         ros::Subscriber _update_sub;
 
-        // callback methods
+        // callback method for subcribing to the pose topic
         void poseCallback(const geometry_msgs::Pose::ConstPtr& input);
+        // callback for subcribing to the trust topic
         void thrustCallback(const quadcopter::Thrust::ConstPtr& input);
+        // callback to propagate the drone dynamics
         void updateCallback(const geometry_msgs::Accel::ConstPtr& derivative_input);
 
 
-        // Dynamics and Kinematics methods
+        // compute the Equations of motions using inverted dynamics
         void compute_eom();
+        // update rotation and angular matrices
         void update_transformation_matrix();
 
         // state vector
