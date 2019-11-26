@@ -18,17 +18,18 @@ public:
 
     struct Gain
     {
-        double kp;
-        double ki;
-        double kd;
-        double tf;
-        double kt; // anti-windup gain 
+        double kp = 0;
+        double ki = 0;
+        double kd = 0;
+        double tf = 0;
+        double kt = 0; // anti-windup gain 
     };
     
 
-    void set_target(double target);
+    void compute_error(double target,double measure);
     void set_freq_filter(double freq);
-    void load_pid_params();
+    void set_saturator(double low,double high);
+    bool load_pid_params();
 
     void init_or_reset_PID();
     double get_pid();
@@ -36,6 +37,8 @@ public:
     double get_derivative();
     double get_integrator();
     void update_integrator_anti_wu();
+
+    void get_gains(Gain &gains);
 
 
 private:
@@ -52,8 +55,8 @@ private:
     double _error;
     double _output;
     double _sat_output;
-    double low_val;
-    double high_val;
+    double _low_val;
+    double _high_val;
 
     // flags
 

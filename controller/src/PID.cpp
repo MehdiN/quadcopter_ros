@@ -1,11 +1,12 @@
 #include "controller/PID.h"
 
-
-
 // Contructor
 
 PID::PID():
-_dt(0.01)
+_measure(0),
+_dt(0.01),
+_low_val(0),
+_high_val(1)
 {
     _gains.kp = 1;
     _gains.ki = 0;
@@ -25,22 +26,26 @@ void PID::init_or_reset_PID()
     _init = true;
 }
 
-void PID::set_target(double target)
+void PID::compute_error(double target,double measure)
 {
     _target = target;
+    _measure = measure;
     _error = _target - _measure;
 }
 
-void PID::load_pid_params()
+
+bool PID::load_pid_params()
 {
+    bool data_loaded = true;
     double freq;
-    ros::param::get("altitude_ctl_values/kp",_gains.kp);
-    ros::param::get("altitude_ctl_values/ki",_gains.ki);
-    ros::param::get("altitude_ctl_values/kd",_gains.kd);
-    ros::param::get("altitude_ctl_values/kt",_gains.kt);
-    ros::param::get("altitude_ctl_values/lp_freq",freq);
+    data_loaded = ros::param::get("altitude_ctl_values/kp",_gains.kp) && data_loaded;
+    data_loaded = ros::param::get("altitude_ctl_values/ki",_gains.ki) && data_loaded;
+    data_loaded = ros::param::get("altitude_ctl_values/kd",_gains.kd) && data_loaded;
+    data_loaded = ros::param::get("altitude_ctl_values/kt",_gains.kt) && data_loaded;
+    data_loaded = ros::param::get("altitude_ctl_values/lp_freq",freq) && data_loaded;
     set_freq_filter(freq);
 
+    return data_loaded;
 }
 
 
@@ -50,6 +55,17 @@ void PID::set_freq_filter(double freq)
     {
         _gains.tf = 1/freq;
     }
+    else
+    {
+        _gains.tf = 1;
+    }
+    
+}
+
+void PID::set_saturator(double low,double high)
+{
+    _low_val = low;
+    _high_val = high;
 }
 
 double PID::get_proportional()
@@ -62,11 +78,12 @@ double PID::get_integrator()
     return _integrator;
 }
 
+
 void PID::update_integrator_anti_wu()
 {
     // saturate output
-    _sat_output = std::min(low_val,_output);
-    _sat_output = std::max(high_val,_output);
+    _sat_output = std::min(_low_val,_output);
+    _sat_output = std::max(_high_val,_output);
     _integrator += _gains.ki * _dt * _error + _dt * _gains.kt * (_output - _sat_output);
 }
 
@@ -83,4 +100,9 @@ double PID::get_pid()
     update_integrator_anti_wu();
     _old_measure = _measure;
     return _output;
+}
+
+void PID::get_gains(Gain &gains)
+{
+    gains = _gains;
 }
