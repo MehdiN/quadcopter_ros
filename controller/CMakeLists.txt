@@ -107,7 +107,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
   CATKIN_DEPENDS geometry_msgs roscpp std_msgs
-  DEPENDS eigen
+  # DEPENDS eigen
 )
 
 ###########
@@ -122,9 +122,17 @@ include_directories(
 )
 
 ## Declare a C++ library
-# add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/controller.cpp
-# )
+ add_library(${PROJECT_NAME}_lib
+   #src/${PROJECT_NAME}/controller.cpp
+   src/PID.cpp
+   src/AltitudeController.cpp 
+   src/Controller.cpp
+  )
+
+# add_library(AltitudeController include/controller/AltitudeController.cpp)
+# add_library(PID include/controller/PID.cpp)
+# add_library(Controller include/controller/Controller.cpp)
+
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -134,14 +142,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(
-  ${PROJECT_NAME}_node src/controller.cpp
-)
-
-add_library(AltitudeController include/altitudeControl/AltitudeController.cpp)
-add_library(PID include/controller/PID.cpp)
-
-target_link_libraries(${PROJECT_NAME}_node PID AltitudeController)
+add_executable( ${PROJECT_NAME} src/controller.cpp )
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -151,12 +152,10 @@ target_link_libraries(${PROJECT_NAME}_node PID AltitudeController)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(${PROJECT_NAME}_node
-  ${catkin_LIBRARIES}
-)
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${PROJECT_NAME}_lib)
 
 #############
 ## Install ##
